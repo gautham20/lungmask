@@ -20,7 +20,7 @@ model_urls = {('unet', 'R231'): ('https://github.com/JoHof/lungmask/releases/dow
                   'https://github.com/JoHof/lungmask/releases/download/v0.0/unet_r231covid-0de78a7e.pth', 3)}
 
 
-def apply(image, model=None, force_cpu=False, batch_size=20, volume_postprocessing=True, noHU=False):
+def apply(image, model=None, force_cpu=False, batch_size=20, volume_postprocessing=True, noHU=False, verbose=False):
     if model is None:
         model = get_model('unet', 'R231')
 
@@ -61,7 +61,7 @@ def apply(image, model=None, force_cpu=False, batch_size=20, volume_postprocessi
     timage_res = np.empty((np.append(0, tvolslices[0].shape)), dtype=np.uint8)
 
     with torch.no_grad():
-        for X in tqdm(dataloader_val):
+        for X in tqdm(dataloader_val, disable=~verbose):
             X = X.float().to(device)
             prediction = model(X)
             pls = torch.max(prediction, 1)[1].detach().cpu().numpy().astype(np.uint8)
@@ -103,7 +103,7 @@ def get_model(modeltype, modelname):
     state_dict = torch.hub.load_state_dict_from_url(model_url, progress=True, map_location=torch.device('cpu'))
     return build_model(modeltype, modelname, state_dict, n_classes)
 
-    
+
 def load_model(modeltype, modelname, modelfile_path):
     _, n_classes = model_urls[(modeltype, modelname)]
     state_dict = torch.load(modelfile_path)

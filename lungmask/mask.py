@@ -86,10 +86,7 @@ def apply(image, model=None, force_cpu=False, batch_size=20, volume_postprocessi
 
     return outmask.astype(np.uint8)
 
-
-def get_model(modeltype, modelname):
-    model_url, n_classes = model_urls[(modeltype, modelname)]
-    state_dict = torch.hub.load_state_dict_from_url(model_url, progress=True, map_location=torch.device('cpu'))
+def build_model(modeltype, modelname, state_dict, n_classes):
     if modeltype == 'unet':
         model = UNet(n_classes=n_classes, padding=True, depth=5, up_mode='upsample', batch_norm=True, residual=False)
     elif modeltype == 'resunet':
@@ -99,6 +96,18 @@ def get_model(modeltype, modelname):
     model.load_state_dict(state_dict)
     model.eval()
     return model
+
+
+def get_model(modeltype, modelname):
+    model_url, n_classes = model_urls[(modeltype, modelname)]
+    state_dict = torch.hub.load_state_dict_from_url(model_url, progress=True, map_location=torch.device('cpu'))
+    return build_model(modeltype, modelname, state_dict, n_classes)
+
+    
+def load_model(modeltype, modelname, modelfile_path):
+    _, n_classes = model_urls[(modeltype, modelname)]
+    state_dict = torch.load(modelfile_path)
+    return build_model(modeltype, modelname, state_dict, n_classes)
 
 
 def apply_fused(image, basemodel = 'LTRCLobes', fillmodel = 'R231', force_cpu=False, batch_size=20, volume_postprocessing=True, noHU=False):
